@@ -209,3 +209,17 @@ node server/test_attendance_submit_update.mjs
 For detailed architectural specifications, ER diagrams, security audits, and API documentation:
 - [Technical Master Plan](file:///i:/Richu/Projects/CollegeManagement/docs/TECHNICAL_MASTER_PLAN.md)
 - [Deployment Guide](file:///i:/Richu/Projects/CollegeManagement/docs/DEPLOYMENT_GUIDE.md)
+## Mobile App (Android)
+Capacitor wrapper of the team's React client, with HashRouter and mobile-specific changes.
+
+- **Stack:** React (client), Node/Express (API), PostgreSQL on Neon, Capacitor (Android)
+- **Live API:** https://college-api-ljqv.onrender.com/api/v1
+- **Demo login:** student.alex@college.edu / Password@123
+- **APK:** link to your GitHub Release
+
+### Build
+1. `cd client && npm install && npm run build`
+2. `cd ../mobile && npm install && npx cap sync`
+3. `npx cap open android`, then Build > Generate App Bundles or APKs > Generate APKs
+
+Original team project credited to the source repository.
