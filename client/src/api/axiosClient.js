@@ -29,10 +29,10 @@ axiosClient.interceptors.request.use(
 axiosClient.interceptors.response.use(
   (response) => response.data,
   (error) => {
-    if (error.response?.status === 401 && !window.location.pathname.includes('/login')) {
+    if (error.response?.status === 401 && !window.location.hash.includes('/login')) {
       localStorage.removeItem('cmp_token');
       localStorage.removeItem('cmp_user');
-      window.location.href = '/login?expired=true';
+      window.location.hash = '#/login?expired=true';
     }
     return Promise.reject(error.response?.data || error);
   }

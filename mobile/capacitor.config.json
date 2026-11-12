@@ -1,0 +1,5 @@
+{
+  "appId": "com.sujai.college",
+  "appName": "College Management",
+  "webDir": "../client/dist"
+}

@@ -56,7 +56,7 @@ export const AuthProvider = ({ children }) => {
     localStorage.removeItem('cmp_user');
     setToken(null);
     setUser(null);
-    window.location.href = '/login';
+    window.location.hash = '#/login';
   };
 
   const changePassword = async (currentPassword, newPassword) => {
