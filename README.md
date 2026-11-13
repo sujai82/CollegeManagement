@@ -223,3 +223,38 @@ Capacitor wrapper of the team's React client, with HashRouter and mobile-specifi
 3. `npx cap open android`, then Build > Generate App Bundles or APKs > Generate APKs
 
 Original team project credited to the source repository.
+## Mobile App (Android)
+
+**Stack:** Capacitor Android app wrapping the React (Vite) client, talking to an Express API on Render with a PostgreSQL database on Neon.
+
+**Live API:** https://college-api-ljqv.onrender.com/api/v1/health
+
+**Demo login:** `student.alex@college.edu` / `Password@123`
+
+**APK:** download `app-debug.apk` from the [v1.0 release](../../releases).
+
+### What I built (mobile)
+- Capacitor Android app, packaged as an APK.
+- Mobile layout below 1024px: the sidebar is replaced by a fixed bottom navigation bar (Dashboard, Attendance, Courses, Notices, Profile) that keeps the existing role-based access.
+- Safe-area padding for the status bar, notch and home indicator, plus 44px minimum touch targets.
+- Cold-start handling: if login fails with a network error, the app shows "Server is waking up, please wait up to 60 seconds" with a Retry button.
+
+The web app and the API are the shared team project.
+
+### Build steps
+```bash
+cd client
+npm install
+npm run build
+cd ../mobile
+npx cap sync
+cd android
+./gradlew assembleDebug
+```
+Building the APK requires **JDK 21**. The APK is created at `mobile/android/app/build/outputs/apk/debug/app-debug.apk`.
+
+### Note on hosting
+Render's free tier sleeps when idle, so an external uptime monitor pings the public `/api/v1/health` endpoint every 5 minutes. It is not part of the application.
+
+### Screenshots
+<!-- add 3 to 4 screenshots
