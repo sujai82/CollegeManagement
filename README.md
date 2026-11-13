@@ -255,6 +255,3 @@ Building the APK requires **JDK 21**. The APK is created at `mobile/android/app/
 
 ### Note on hosting
 Render's free tier sleeps when idle, so an external uptime monitor pings the public `/api/v1/health` endpoint every 5 minutes. It is not part of the application.
-
-### Screenshots
-<!-- add 3 to 4 screenshots
