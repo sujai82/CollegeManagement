@@ -21,6 +21,7 @@ export const LoginPage = ({ forcedPortal }) => {
   const [password, setPassword] = useState('Password@123');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [isNetworkError, setIsNetworkError] = useState(false);
 
   // Sync state when URL route changes
   useEffect(() => {
@@ -35,11 +36,13 @@ export const LoginPage = ({ forcedPortal }) => {
     }
     setPassword('Password@123');
     setError('');
+    setIsNetworkError(false);
   }, [location.pathname]);
 
   const handlePortalChange = (portal) => {
     setActivePortal(portal);
     setError('');
+    setIsNetworkError(false);
     if (portal === 'STUDENT') {
       navigate('/login/student');
     } else if (portal === 'FACULTY') {
@@ -50,22 +53,59 @@ export const LoginPage = ({ forcedPortal }) => {
   };
 
   const handleLogin = async (e) => {
-    e.preventDefault();
+    if (e && e.preventDefault) {
+      e.preventDefault();
+    }
     if (!email || !password) {
       setError('Please provide institutional credentials.');
+      setIsNetworkError(false);
       return;
     }
 
     setLoading(true);
     setError('');
+    setIsNetworkError(false);
 
-    const res = await login(email, password);
-    setLoading(false);
+    try {
+      const res = await login(email, password);
+      setLoading(false);
 
-    if (res.success) {
-      navigate('/dashboard');
-    } else {
-      setError(res.message || 'Authentication rejected. Verify your institutional email and password.');
+      if (res?.success) {
+        setIsNetworkError(false);
+        navigate('/dashboard');
+      } else {
+        const msg = res?.message || '';
+        const isNetwork =
+          !navigator.onLine ||
+          Boolean(res?.isNetworkError) ||
+          msg === 'Network Error' ||
+          /network|waking|timeout|econnrefused|failed to fetch|load failed|connection/i.test(msg);
+
+        if (isNetwork) {
+          setIsNetworkError(true);
+          setError('Server is waking up, please wait up to 60 seconds');
+        } else {
+          setIsNetworkError(false);
+          setError(msg || 'Authentication rejected. Verify your institutional email and password.');
+        }
+      }
+    } catch (err) {
+      setLoading(false);
+      const msg = err?.message || '';
+      const isNetwork =
+        !navigator.onLine ||
+        err?.code === 'ERR_NETWORK' ||
+        err?.code === 'ECONNREFUSED' ||
+        msg === 'Network Error' ||
+        /network|waking|timeout|econnrefused|failed to fetch|load failed|connection/i.test(msg);
+
+      if (isNetwork) {
+        setIsNetworkError(true);
+        setError('Server is waking up, please wait up to 60 seconds');
+      } else {
+        setIsNetworkError(false);
+        setError(msg || 'Authentication rejected. Verify your institutional email and password.');
+      }
     }
   };
 
@@ -73,6 +113,7 @@ export const LoginPage = ({ forcedPortal }) => {
     setEmail(demoEmail);
     setPassword(demoPass);
     setError('');
+    setIsNetworkError(false);
   };
 
   return (
@@ -87,7 +128,7 @@ export const LoginPage = ({ forcedPortal }) => {
           <button
             type="button"
             onClick={() => handlePortalChange('STUDENT')}
-            className={`flex items-center justify-center gap-1.5 py-2 px-2 rounded text-xs font-semibold tracking-tight transition-all ${
+            className={`flex items-center justify-center gap-1.5 py-2.5 px-2 rounded text-xs font-semibold tracking-tight transition-all min-h-[44px] ${
               activePortal === 'STUDENT'
                 ? 'bg-white text-[#0b1c30] shadow-sm border border-[#c6c6cd]'
                 : 'text-[#515f74] hover:text-[#0b1c30] hover:bg-white/60'
@@ -100,7 +141,7 @@ export const LoginPage = ({ forcedPortal }) => {
           <button
             type="button"
             onClick={() => handlePortalChange('FACULTY')}
-            className={`flex items-center justify-center gap-1.5 py-2 px-2 rounded text-xs font-semibold tracking-tight transition-all ${
+            className={`flex items-center justify-center gap-1.5 py-2.5 px-2 rounded text-xs font-semibold tracking-tight transition-all min-h-[44px] ${
               activePortal === 'FACULTY'
                 ? 'bg-white text-[#0b1c30] shadow-sm border border-[#c6c6cd]'
                 : 'text-[#515f74] hover:text-[#0b1c30] hover:bg-white/60'
@@ -113,7 +154,7 @@ export const LoginPage = ({ forcedPortal }) => {
           <button
             type="button"
             onClick={() => handlePortalChange('ADMIN')}
-            className={`flex items-center justify-center gap-1.5 py-2 px-2 rounded text-xs font-semibold tracking-tight transition-all ${
+            className={`flex items-center justify-center gap-1.5 py-2.5 px-2 rounded text-xs font-semibold tracking-tight transition-all min-h-[44px] ${
               activePortal === 'ADMIN'
                 ? 'bg-white text-[#0b1c30] shadow-sm border border-[#c6c6cd]'
                 : 'text-[#515f74] hover:text-[#0b1c30] hover:bg-white/60'
@@ -176,8 +217,38 @@ export const LoginPage = ({ forcedPortal }) => {
         )}
       </div>
 
-      {/* Error Banner */}
-      {error && (
+      {/* Network Error / Server Waking Up Banner with Retry button, or Standard Error */}
+      {isNetworkError ? (
+        <div className="mb-5 p-3.5 rounded bg-amber-50 border border-amber-200 text-amber-900 text-xs flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-xs">
+          <div className="flex items-start gap-2.5">
+            <span className="material-symbols-outlined text-[20px] shrink-0 text-amber-600 animate-spin mt-0.5">
+              progress_activity
+            </span>
+            <div className="leading-relaxed">
+              <span className="font-semibold block text-amber-950">Backend Connection</span>
+              <span>Server is waking up, please wait up to 60 seconds</span>
+            </div>
+          </div>
+          <button
+            type="button"
+            onClick={() => handleLogin()}
+            disabled={loading}
+            className="inline-flex items-center justify-center gap-1.5 px-4 py-2 rounded bg-amber-800 hover:bg-amber-900 text-white font-semibold text-xs shadow-xs transition-all min-h-[44px] cursor-pointer shrink-0 self-stretch sm:self-auto"
+          >
+            {loading ? (
+              <span className="inline-flex items-center gap-1.5">
+                <span className="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin"></span>
+                <span>Connecting...</span>
+              </span>
+            ) : (
+              <span className="inline-flex items-center gap-1.5">
+                <span className="material-symbols-outlined text-[16px]">refresh</span>
+                <span>Retry</span>
+              </span>
+            )}
+          </button>
+        </div>
+      ) : error ? (
         <div className="mb-5 p-3 rounded bg-[#fff1f2] border border-[#fecdd3] text-[#9f1239] text-xs flex items-start gap-2.5">
           <span className="material-symbols-outlined text-[18px] shrink-0 text-[#9f1239]">error</span>
           <div className="leading-relaxed">
@@ -185,7 +256,7 @@ export const LoginPage = ({ forcedPortal }) => {
             <span>{error}</span>
           </div>
         </div>
-      )}
+      ) : null}
 
       {/* Main Form */}
       <form onSubmit={handleLogin} className="space-y-4">
@@ -207,7 +278,7 @@ export const LoginPage = ({ forcedPortal }) => {
               onChange={(e) => setEmail(e.target.value)}
               placeholder="e.g. name@college.edu"
               required
-              className="w-full pl-9 pr-3 py-2 bg-white border border-[#cbd5e1] rounded text-xs font-medium text-[#0b1c30] placeholder-[#94a3b8] focus:outline-none focus:border-[#0f172a] focus:ring-1 focus:ring-[#0f172a]"
+              className="w-full pl-9 pr-3 py-2.5 min-h-[44px] bg-white border border-[#cbd5e1] rounded text-xs font-medium text-[#0b1c30] placeholder-[#94a3b8] focus:outline-none focus:border-[#0f172a] focus:ring-1 focus:ring-[#0f172a]"
             />
           </div>
         </div>
@@ -231,7 +302,7 @@ export const LoginPage = ({ forcedPortal }) => {
               onChange={(e) => setPassword(e.target.value)}
               placeholder="••••••••••••"
               required
-              className="w-full pl-9 pr-3 py-2 bg-white border border-[#cbd5e1] rounded text-xs font-medium text-[#0b1c30] placeholder-[#94a3b8] focus:outline-none focus:border-[#0f172a] focus:ring-1 focus:ring-[#0f172a]"
+              className="w-full pl-9 pr-3 py-2.5 min-h-[44px] bg-white border border-[#cbd5e1] rounded text-xs font-medium text-[#0b1c30] placeholder-[#94a3b8] focus:outline-none focus:border-[#0f172a] focus:ring-1 focus:ring-[#0f172a]"
             />
           </div>
         </div>
@@ -239,7 +310,7 @@ export const LoginPage = ({ forcedPortal }) => {
         <button
           type="submit"
           disabled={loading}
-          className="w-full btn-stitch-primary py-2.5 text-xs font-semibold justify-center mt-2"
+          className="w-full btn-stitch-primary py-3 min-h-[44px] text-xs font-semibold justify-center mt-2"
         >
           {loading ? (
             <span className="inline-flex items-center gap-2">
@@ -269,7 +340,7 @@ export const LoginPage = ({ forcedPortal }) => {
             <button
               type="button"
               onClick={() => setDemoCredentials('student.alex@college.edu')}
-              className="text-left p-2.5 rounded border border-[#e2e8f0] bg-[#eff4ff] hover:bg-[#e5eeff] hover:border-[#cbd5e1] transition-all group"
+              className="text-left p-3 min-h-[44px] rounded border border-[#e2e8f0] bg-[#eff4ff] hover:bg-[#e5eeff] hover:border-[#cbd5e1] transition-all group flex flex-col justify-center"
             >
               <div className="flex items-center justify-between">
                 <span className="text-xs font-bold text-[#0b1c30]">Alex Mercer</span>
@@ -281,7 +352,7 @@ export const LoginPage = ({ forcedPortal }) => {
             <button
               type="button"
               onClick={() => setDemoCredentials('student.priya@college.edu')}
-              className="text-left p-2.5 rounded border border-[#e2e8f0] bg-[#eff4ff] hover:bg-[#e5eeff] hover:border-[#cbd5e1] transition-all group"
+              className="text-left p-3 min-h-[44px] rounded border border-[#e2e8f0] bg-[#eff4ff] hover:bg-[#e5eeff] hover:border-[#cbd5e1] transition-all group flex flex-col justify-center"
             >
               <div className="flex items-center justify-between">
                 <span className="text-xs font-bold text-[#0b1c30]">Priya Nair</span>
@@ -297,7 +368,7 @@ export const LoginPage = ({ forcedPortal }) => {
             <button
               type="button"
               onClick={() => setDemoCredentials('faculty.alan@college.edu')}
-              className="text-left p-2.5 rounded border border-[#e2e8f0] bg-[#ecfdf5] hover:bg-[#d1fae5] hover:border-[#a7f3d0] transition-all group"
+              className="text-left p-3 min-h-[44px] rounded border border-[#e2e8f0] bg-[#ecfdf5] hover:bg-[#d1fae5] hover:border-[#a7f3d0] transition-all group flex flex-col justify-center"
             >
               <div className="flex items-center justify-between">
                 <span className="text-xs font-bold text-[#065f46]">Dr. Alan Turing</span>
@@ -309,7 +380,7 @@ export const LoginPage = ({ forcedPortal }) => {
             <button
               type="button"
               onClick={() => setDemoCredentials('faculty.grace@college.edu')}
-              className="text-left p-2.5 rounded border border-[#e2e8f0] bg-[#ecfdf5] hover:bg-[#d1fae5] hover:border-[#a7f3d0] transition-all group"
+              className="text-left p-3 min-h-[44px] rounded border border-[#e2e8f0] bg-[#ecfdf5] hover:bg-[#d1fae5] hover:border-[#a7f3d0] transition-all group flex flex-col justify-center"
             >
               <div className="flex items-center justify-between">
                 <span className="text-xs font-bold text-[#065f46]">Prof. Grace Hopper</span>
@@ -325,7 +396,7 @@ export const LoginPage = ({ forcedPortal }) => {
             <button
               type="button"
               onClick={() => setDemoCredentials('admin@college.edu')}
-              className="text-left p-2.5 rounded border border-[#e2e8f0] bg-[#fffbeb] hover:bg-[#fef3c7] hover:border-[#fde68a] transition-all group"
+              className="text-left p-3 min-h-[44px] rounded border border-[#e2e8f0] bg-[#fffbeb] hover:bg-[#fef3c7] hover:border-[#fde68a] transition-all group flex flex-col justify-center"
             >
               <div className="flex items-center justify-between">
                 <span className="text-xs font-bold text-[#92400e]">System Admin</span>
@@ -337,7 +408,7 @@ export const LoginPage = ({ forcedPortal }) => {
             <button
               type="button"
               onClick={() => setDemoCredentials('hod.cse@college.edu')}
-              className="text-left p-2.5 rounded border border-[#e2e8f0] bg-[#fffbeb] hover:bg-[#fef3c7] hover:border-[#fde68a] transition-all group"
+              className="text-left p-3 min-h-[44px] rounded border border-[#e2e8f0] bg-[#fffbeb] hover:bg-[#fef3c7] hover:border-[#fde68a] transition-all group flex flex-col justify-center"
             >
               <div className="flex items-center justify-between">
                 <span className="text-xs font-bold text-[#92400e]">Dr. Robert Vance</span>

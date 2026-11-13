@@ -20,6 +20,12 @@
     --primary-container: #131b2e;
     --error: #ba1a1a;
     --error-container: #ffdad6;
+
+    /* Safe Area Insets for Mobile Notch & Home Indicator */
+    --safe-area-top: env(safe-area-inset-top, 0px);
+    --safe-area-bottom: env(safe-area-inset-bottom, 0px);
+    --safe-area-left: env(safe-area-inset-left, 0px);
+    --safe-area-right: env(safe-area-inset-right, 0px);
   }
 
   body {
@@ -34,8 +40,34 @@
 
   #root {
     min-height: 100vh;
+    min-height: 100dvh;
     display: flex;
     flex-direction: column;
+  }
+}
+
+/* Safe area utilities */
+.safe-area-top,
+.pt-safe {
+  padding-top: env(safe-area-inset-top, 0px);
+}
+
+.safe-area-bottom,
+.pb-safe {
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+
+/* Mobile viewport adjustments below 1024px: Buttons and inputs min 44px tall */
+@media (max-width: 1023.98px) {
+  button,
+  input:not([type="checkbox"]):not([type="radio"]):not([type="hidden"]),
+  select,
+  textarea,
+  .btn-stitch-primary,
+  .btn-stitch-secondary,
+  .btn-stitch-danger {
+    min-height: 44px;
+    box-sizing: border-box;
   }
 }
 
